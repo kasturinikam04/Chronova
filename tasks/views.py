@@ -3,13 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .forms import CategoryForm, TaskForm
-from .models import Task
+from .models import Category, Task
 
 
 @login_required
 def task_list(request):
     tasks = Task.objects.filter(user=request.user).select_related("category")
-    return render(request, "tasks/list.html", {"tasks": tasks, "form": TaskForm(user=request.user), "category_form": CategoryForm()})
+    categories = Category.objects.filter(user=request.user)
+    return render(request, "tasks/list.html", {"tasks": tasks, "categories": categories, "form": TaskForm(user=request.user), "category_form": CategoryForm()})
 
 
 @login_required
