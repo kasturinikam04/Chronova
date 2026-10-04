@@ -4,13 +4,14 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from .forms import TimetableEntryForm
 from .models import TimetableEntry
+from dashboard.intelligence import timetable_analysis
 
 
 @login_required
 def schedule(request):
     entries = TimetableEntry.objects.filter(user=request.user)
     grouped = {day: entries.filter(day=number) for number, day in TimetableEntry.Day.choices}
-    return render(request, "timetable/schedule.html", {"grouped": grouped, "form": TimetableEntryForm(), "today": date.today().weekday()})
+    return render(request, "timetable/schedule.html", {"grouped": grouped, "form": TimetableEntryForm(), "today": date.today().weekday(), "analysis": timetable_analysis(request.user)})
 
 
 @login_required

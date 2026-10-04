@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Study sessions | Chronova{% endblock %}
+{% block content %}
+<section class="container app-header"><div><p class="eyebrow">STUDY ACTIVITY</p><h1>Make progress <em>visible.</em></h1><p>{{ total_minutes }} focused minutes recorded in your recent sessions.</p></div><button class="button" data-modal-open="log-session">Log session <span>+</span></button></section>
+<section class="container workspace-card">{% for session in sessions %}<div class="compact-row"><span class="check-orb">◷</span><div><strong>{% if session.subject %}{{ session.subject.name }}{% else %}Independent study{% endif %}</strong><small>{{ session.started_at|date:"M j, g:i A" }} · {{ session.duration_minutes }} min {% if session.note %}· {{ session.note }}{% endif %}</small></div></div>{% empty %}<div class="empty-state"><span>◷</span><h2>Your study history starts here.</h2><p>Log a session once it ends to power your preparation and productivity insights.</p></div>{% endfor %}</section>
+<div class="modal" id="log-session" aria-hidden="true"><div class="modal-box"><button class="modal-close" data-modal-close>×</button><p class="eyebrow">STUDY SESSION</p><h2>Record focused work</h2><form method="post" action="{% url 'planner:session_create' %}">{% csrf_token %}{% for field in form %}<label>{{ field.label }}{{ field }}</label>{% for error in field.errors %}<small class="form-error">{{ error }}</small>{% endfor %}{% endfor %}<button class="button">Save session</button></form></div></div>
+{% endblock %}

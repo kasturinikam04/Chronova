@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AnalyticsSnapshot, Assignment, CareerMilestone, CareerRoadmap, Notification, StudyPlan, StudyPlanItem, VivaQuestion, VivaSession
+from .models import AcademicDocument, Achievement, AnalyticsSnapshot, Assignment, CareerMilestone, CareerRoadmap, DocumentAnalysis, Notification, StudyPlan, StudyPlanItem, StudySession, UserAchievement, VivaQuestion, VivaSession
 
 
 class StudyPlanItemInline(admin.TabularInline):
@@ -20,4 +20,4 @@ class AssignmentAdmin(admin.ModelAdmin):
     list_filter = ("priority", "completed")
 
 
-admin.site.register((VivaSession, VivaQuestion, CareerRoadmap, CareerMilestone, Notification, AnalyticsSnapshot))
+admin.site.register((VivaSession, VivaQuestion, CareerRoadmap, CareerMilestone, Notification, AnalyticsSnapshot, AcademicDocument, DocumentAnalysis, StudySession, Achievement, UserAchievement))

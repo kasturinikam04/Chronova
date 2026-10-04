@@ -22,3 +22,7 @@ Set `DJANGO_DEBUG=False`, a unique secret key, explicit `DJANGO_ALLOWED_HOSTS`, 
 ## Planning studio
 
 The `/planner/` workspace uses deterministic, transparent plan-generation rules as a reliable first release. The generator functions in `planner/services.py` are intentionally isolated so an approved AI provider can replace them later without changing the data model or UI.
+
+## Optional AI and OCR
+
+Set `OPENAI_API_KEY` and optionally `CHRONOVA_LLM_MODEL` in `.env` to enable LLM summaries. Install the updated requirements and install the native Tesseract OCR engine for timetable-image extraction. PDF text extraction works through `pypdf`; image OCR safely remains pending if Tesseract is unavailable.

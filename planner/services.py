@@ -1,6 +1,6 @@
 from datetime import timedelta
 from django.utils import timezone
-from .models import CareerMilestone, StudyPlanItem, VivaQuestion
+from .models import CareerMilestone, Notification, StudyPlan, StudyPlanItem, VivaQuestion
 
 
 def generate_study_items(plan):
@@ -41,3 +41,13 @@ def generate_career_milestones(roadmap):
     }
     roadmap.milestones.all().delete()
     CareerMilestone.objects.bulk_create([CareerMilestone(roadmap=roadmap, title=t, detail=d, category=c, position=i) for i, (t, d, c) in enumerate(roadmaps[roadmap.path], 1)])
+
+
+def refresh_notifications(user):
+    """Idempotently surface actionable academic signals when the workspace opens."""
+    today = timezone.localdate()
+    for plan in StudyPlan.objects.filter(user=user, status=StudyPlan.Status.ACTIVE, exam_date__range=(today, today + timedelta(days=7))).select_related("subject"):
+        Notification.objects.get_or_create(user=user, title=f"Exam approaching: {plan.subject.name}", body=f"Your exam is on {plan.exam_date:%b %d}. Review the revision sessions in your plan.", defaults={"link": "/planner/"})
+    for subject in user.subjects.prefetch_related("records"):
+        if subject.records.exists() and subject.percentage < subject.target_percentage:
+            Notification.objects.get_or_create(user=user, title=f"Attendance alert: {subject.name}", body=f"Attendance is {subject.percentage}%, below your {subject.target_percentage}% target.", defaults={"link": "/attendance/"})

@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from .models import Assignment, CareerRoadmap, StudyPlan
+from .models import AcademicDocument, Assignment, CareerRoadmap, StudyPlan, StudySession
 
 
 class StyledModelForm(forms.ModelForm):
@@ -46,3 +46,36 @@ class CareerRoadmapForm(StyledModelForm):
     class Meta:
         model = CareerRoadmap
         fields = ("path", "target_role")
+
+
+class DocumentUploadForm(StyledModelForm):
+    class Meta:
+        model = AcademicDocument
+        fields = ("document_type", "title", "file")
+
+    def clean_file(self):
+        uploaded = self.cleaned_data["file"]
+        allowed = {".pdf", ".png", ".jpg", ".jpeg", ".webp"}
+        extension = "." + uploaded.name.rsplit(".", 1)[-1].lower() if "." in uploaded.name else ""
+        if extension not in allowed:
+            raise forms.ValidationError("Upload a PDF or a supported image file.")
+        if uploaded.size > 10 * 1024 * 1024:
+            raise forms.ValidationError("Files must be 10 MB or smaller.")
+        return uploaded
+
+
+class StudySessionForm(StyledModelForm):
+    class Meta:
+        model = StudySession
+        fields = ("subject", "started_at", "ended_at", "note")
+        widgets = {"started_at": forms.DateTimeInput(attrs={"type": "datetime-local"}), "ended_at": forms.DateTimeInput(attrs={"type": "datetime-local"})}
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["subject"].queryset = self.fields["subject"].queryset.filter(user=user)
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("started_at") and cleaned.get("ended_at") and cleaned["ended_at"] <= cleaned["started_at"]:
+            self.add_error("ended_at", "End time must be after the start time.")
+        return cleaned

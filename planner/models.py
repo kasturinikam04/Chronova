@@ -144,3 +144,68 @@ class AnalyticsSnapshot(models.Model):
     class Meta:
         ordering = ("-date",)
         constraints = [models.UniqueConstraint(fields=("user", "date"), name="unique_user_analytics_date")]
+
+
+class AcademicDocument(models.Model):
+    """Upload-ready record; OCR and extraction are intentionally deferred."""
+    class DocumentType(models.TextChoices):
+        TIMETABLE = "timetable", "Timetable image"
+        SYLLABUS = "syllabus", "Syllabus PDF"
+        NOTES = "notes", "Notes"
+        QUESTION_PAPER = "question_paper", "Question paper"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="academic_documents")
+    document_type = models.CharField(max_length=20, choices=DocumentType.choices)
+    title = models.CharField(max_length=180)
+    file = models.FileField(upload_to="academic-documents/%Y/%m/")
+    extracted_text = models.TextField(blank=True)
+    extraction_status = models.CharField(max_length=20, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        indexes = [models.Index(fields=("user", "document_type", "created_at"))]
+
+
+class DocumentAnalysis(models.Model):
+    document = models.OneToOneField(AcademicDocument, on_delete=models.CASCADE, related_name="analysis")
+    topics = models.JSONField(default=list)
+    summary = models.TextField(blank=True)
+    priority_score = models.PositiveSmallIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class StudySession(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="study_sessions")
+    subject = models.ForeignKey("attendance.Subject", on_delete=models.SET_NULL, null=True, blank=True, related_name="study_sessions")
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField()
+    note = models.CharField(max_length=240, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-started_at",)
+        indexes = [models.Index(fields=("user", "started_at"))]
+
+    @property
+    def duration_minutes(self):
+        return max(0, int((self.ended_at - self.started_at).total_seconds() // 60))
+
+
+class Achievement(models.Model):
+    code = models.SlugField(unique=True)
+    name = models.CharField(max_length=100)
+    description = models.CharField(max_length=240)
+    threshold = models.PositiveSmallIntegerField(default=1)
+
+    def __str__(self):
+        return self.name
+
+
+class UserAchievement(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="achievements")
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name="earners")
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("user", "achievement"), name="unique_user_achievement")]

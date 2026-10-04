@@ -3,12 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from .forms import AttendanceRecordForm, SubjectForm
 from .models import Subject
+from dashboard.intelligence import attendance_intelligence
 
 
 @login_required
 def overview(request):
     subjects = Subject.objects.filter(user=request.user).prefetch_related("records")
-    return render(request, "attendance/overview.html", {"subjects": subjects, "subject_form": SubjectForm(), "record_form": AttendanceRecordForm(user=request.user)})
+    return render(request, "attendance/overview.html", {"subjects": subjects, "intelligence": attendance_intelligence(request.user), "subject_form": SubjectForm(), "record_form": AttendanceRecordForm(user=request.user)})
 
 
 @login_required

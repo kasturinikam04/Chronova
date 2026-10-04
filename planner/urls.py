@@ -8,4 +8,6 @@ urlpatterns = [
     path("assignments/create/", views.assignment_create, name="assignment_create"), path("assignments/<int:pk>/toggle/", views.assignment_toggle, name="assignment_toggle"),
     path("viva/create/", views.viva_create, name="viva_create"), path("career/create/", views.career_create, name="career_create"),
     path("notifications/read/", views.notifications_read, name="notifications_read"),
+    path("documents/", views.documents, name="documents"), path("documents/upload/", views.document_upload, name="document_upload"),
+    path("sessions/", views.sessions, name="sessions"), path("sessions/create/", views.session_create, name="session_create"),
 ]

@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Search | Chronova{% endblock %}
+{% block content %}
+<section class="container narrow-section"><p class="eyebrow">GLOBAL SEARCH</p><h1>Find your academic <em>context.</em></h1><form method="get" class="assistant-form"><input name="q" value="{{ query }}" placeholder="Search tasks, subjects, notes, timetable, plans"><button class="button">Search</button></form>{% if query %}<div class="workspace-card search-results"><p class="eyebrow">RESULTS FOR “{{ query }}”</p>{% for type, title, route in results %}<div class="compact-row"><span class="priority normal">{{ type }}</span><a href="{% url route %}"><strong>{{ title }}</strong></a></div>{% empty %}<div class="empty-inline">No matching academic records yet.</div>{% endfor %}</div>{% endif %}</section>
+{% endblock %}

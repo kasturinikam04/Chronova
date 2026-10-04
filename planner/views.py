@@ -5,9 +5,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from attendance.models import Subject
 from tasks.models import Task
-from .forms import AssignmentForm, CareerRoadmapForm, StudyPlanForm, VivaForm
-from .models import Assignment, CareerRoadmap, Notification, StudyPlan, StudyPlanItem, VivaSession
-from .services import generate_career_milestones, generate_study_items, generate_viva_questions
+from .forms import AssignmentForm, CareerRoadmapForm, DocumentUploadForm, StudyPlanForm, StudySessionForm, VivaForm
+from .models import AcademicDocument, Assignment, CareerRoadmap, Notification, StudyPlan, StudyPlanItem, StudySession, VivaSession
+from .document_services import queue_extraction
+from .services import generate_career_milestones, generate_study_items, generate_viva_questions, refresh_notifications
 
 
 def _health(user):
@@ -23,6 +24,7 @@ def _health(user):
 @login_required
 def overview(request):
     today = timezone.localdate()
+    refresh_notifications(request.user)
     plans = StudyPlan.objects.filter(user=request.user, status=StudyPlan.Status.ACTIVE).select_related("subject").prefetch_related("items")
     assignments = Assignment.objects.filter(user=request.user).select_related("subject")
     notification_query = Notification.objects.filter(user=request.user)
@@ -109,3 +111,33 @@ def notifications_read(request):
     if request.method == "POST":
         Notification.objects.filter(user=request.user, read_at__isnull=True).update(read_at=timezone.now())
     return redirect("planner:overview")
+
+
+@login_required
+def documents(request):
+    return render(request, "planner/documents.html", {"documents": AcademicDocument.objects.filter(user=request.user), "form": DocumentUploadForm()})
+
+
+@login_required
+def document_upload(request):
+    form = DocumentUploadForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        document = form.save(commit=False); document.user = request.user; document.save(); queue_extraction(document)
+        messages.success(request, "Document uploaded and queued for future intelligent extraction.")
+    return redirect("planner:documents")
+
+
+@login_required
+def sessions(request):
+    session_query = StudySession.objects.filter(user=request.user).select_related("subject")
+    total_minutes = sum(session.duration_minutes for session in session_query[:50])
+    return render(request, "planner/sessions.html", {"sessions": session_query[:25], "total_minutes": total_minutes, "form": StudySessionForm(user=request.user)})
+
+
+@login_required
+def session_create(request):
+    form = StudySessionForm(request.POST or None, user=request.user)
+    if request.method == "POST" and form.is_valid():
+        study_session = form.save(commit=False); study_session.user = request.user; study_session.save()
+        messages.success(request, "Study session logged. Your insights are now more accurate.")
+    return redirect("planner:sessions")
